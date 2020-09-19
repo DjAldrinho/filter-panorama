@@ -3,14 +3,29 @@
     <div class="col-10 px-2">
       <mat-card>
         <div class="row align-items-center justify-content-between">
-          <div class="col-6">
+          <div class="col-6 d-flex">
             <mat-form-field>
               <input matInput placeholder="Search" (ngModelChange)="filterData($event)"
                      [(ngModel)]="search"/>
             </mat-form-field>
+            <div *ngFor="let filter of filtersShow; let i = index">
+              <div class="d-flex" *ngIf="filter.id === 'userId'">
+                <button mat-button (click)="removeFilter(i)">
+                  <mat-icon>cancel</mat-icon>
+                </button>
+                <mat-form-field>
+                  <mat-label>User</mat-label>
+                  <mat-select>
+                    <mat-option *ngFor="let user of users; let i = index" [value]="i">
+                      {{user}}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+            </div>
           </div>
           <div class="col-6 d-flex justify-content-end align-items-end">
-            <button mat-button color="primary">
+            <button mat-button color="primary" [matMenuTriggerFor]="menu">
               <mat-icon>filter_list</mat-icon>
               Add Filter
             </button>
@@ -22,8 +37,12 @@
               <mat-icon>cloud_download</mat-icon>
               Export
             </button>
+            <mat-menu #menu="matMenu">
+              <button mat-menu-item *ngFor="let f of filters" (click)="addFilter(f)">{{f.name}}</button>
+            </mat-menu>
           </div>
         </div>
+
       </mat-card>
     </div>
   </div>
@@ -32,6 +51,14 @@
     <div class="col-10">
       <div class="my-4 px-2">
         <table mat-table matSort [dataSource]="dataSource" class="w-100">
+          <ng-container matColumnDef="select">
+            <th mat-header-cell *matHeaderCellDef>
+              <mat-checkbox></mat-checkbox>
+            </th>
+            <td mat-cell *matCellDef="let row">
+              <mat-checkbox (click)="$event.stopPropagation()"></mat-checkbox>
+            </td>
+          </ng-container>
           <ng-container matColumnDef="id">
             <th mat-header-cell *matHeaderCellDef mat-sort-header> ID</th>
             <td mat-cell *matCellDef="let element"> {{element.id}} </td>
@@ -43,8 +70,28 @@
             <td mat-cell *matCellDef="let element"> {{element.title}} </td>
           </ng-container>
 
-          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+          <ng-container matColumnDef="userId">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header> User</th>
+            <td mat-cell *matCellDef="let element"> {{users[element.userId]}} </td>
+          </ng-container>
+
+          <ng-container matColumnDef="body">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header> Body</th>
+            <td mat-cell *matCellDef="let element"> {{element.body}} </td>
+          </ng-container>
+
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef mat-sort-heade> Actions</th>
+            <td mat-cell *matCellDef="let element" class="align-middle">
+              <span class="text-primary font-weight-bolder">
+                <mat-icon color="primary">edit</mat-icon>
+                EDIT
+              </span>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="getDisplayedColumns()"></tr>
+          <tr mat-row *matRowDef="let row; columns: getDisplayedColumns();"></tr>
         </table>
         <mat-paginator [pageSizeOptions]="[25, 50, 100]" showFirstLastButtons></mat-paginator>
       </div>
