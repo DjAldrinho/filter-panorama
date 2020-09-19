@@ -1,4 +1,4 @@
-import {AfterViewInit, Component, OnInit, ViewChild} from '@angular/core';
+import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
 import {PostsService} from '../services/posts.service';
 import {MatTableDataSource} from '@angular/material/table';
 import {MatPaginator} from '@angular/material/paginator';
@@ -6,6 +6,8 @@ import {MatSort} from '@angular/material/sort';
 import {FormControl, FormGroup} from '@angular/forms';
 import {merge, Observable} from 'rxjs';
 import {UsersService} from '../services/user.service';
+import * as _ from 'lodash';
+import * as XLSX from 'xlsx';
 
 @Component({
   selector: 'app-posts',
@@ -30,10 +32,12 @@ export class PostsComponent implements OnInit {
   userId = this.form.get('userId');
 
   displayedColumns: any[] = [
+    {def: 'select', label: '', hide: false},
     {def: 'id', label: 'ID', hide: this.id.value},
     {def: 'title', label: 'Title', hide: this.title.value},
     {def: 'body', label: 'Body', hide: true},
-    {def: 'userId', label: 'UserID', hide: this.userId.value},
+    {def: 'user', label: 'User', hide: false},
+    {def: 'userId', label: 'UserID', hide: true},
     {def: 'actions', label: 'Actions', hide: false},
   ];
   cbValues = null;
@@ -42,12 +46,14 @@ export class PostsComponent implements OnInit {
   showColumnUser = false;
   @ViewChild(MatPaginator) paginator: MatPaginator;
   @ViewChild(MatSort) sort: MatSort;
+  @ViewChild('table') table: ElementRef;
 
 
   constructor(private potsService: PostsService,
               private userService: UsersService) {
     this.users = [];
     this.filtersShow = [];
+    this.getUsers();
     this.getPots();
   }
 
@@ -55,6 +61,9 @@ export class PostsComponent implements OnInit {
   }
 
   filterData(event): void {
+    if (_.isNumber(event)) {
+      event = event.toString();
+    }
     let filterValue = event.trim();
     filterValue = filterValue.toLowerCase();
     this.dataSource.filter = filterValue;
@@ -70,19 +79,44 @@ export class PostsComponent implements OnInit {
 
   removeFilter(index: number): void {
     this.filtersShow.splice(index, 1);
+    this.filterData('');
+  }
+
+  getUsers(): void {
+    this.userService.getUsers().subscribe((data) => {
+      this.users = data;
+    });
+  }
+
+  export(): void {
+    const ws: XLSX.WorkSheet = XLSX.utils.table_to_sheet(this.table.nativeElement);
+    const wb: XLSX.WorkBook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+    XLSX.writeFile(wb, 'Posts.xlsx');
   }
 
   private getPots(): void {
     this.potsService.getPots().subscribe((data) => {
-      this.getUsers();
       this.initTable(data);
     }, (error) => {
       console.error(error);
     });
   }
 
+
   private initTable(data): void {
-    this.dataSource = new MatTableDataSource<any>(data);
+    const finalData = [];
+    data.forEach((item) => {
+      const user = this.users.filter((u) => item.userId === u.id);
+      finalData.push({
+        id: item.id,
+        title: item.title,
+        userId: item.userId,
+        user: user[0].name
+      });
+    });
+
+    this.dataSource = new MatTableDataSource<any>(finalData);
     this.dataSource.paginator = this.paginator;
     this.dataSource.sort = this.sort;
 
@@ -99,12 +133,5 @@ export class PostsComponent implements OnInit {
     });
   }
 
-  private getUsers(): void {
-    this.userService.getUsers().subscribe((data) => {
-      data.forEach((item) => {
-        this.users[item.id] = item.name;
-      });
-    });
-  }
 
 }

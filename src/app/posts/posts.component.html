@@ -15,9 +15,9 @@
                 </button>
                 <mat-form-field>
                   <mat-label>User</mat-label>
-                  <mat-select>
-                    <mat-option *ngFor="let user of users; let i = index" [value]="i">
-                      {{user}}
+                  <mat-select (selectionChange)="filterData($event.value)">
+                    <mat-option *ngFor="let user of users; let i = index" [value]="user.name">
+                      {{user.name}}
                     </mat-option>
                   </mat-select>
                 </mat-form-field>
@@ -33,7 +33,7 @@
               <mat-icon>add</mat-icon>
               Create
             </button>
-            <button mat-button color="primary">
+            <button mat-button color="primary" (click)="export()">
               <mat-icon>cloud_download</mat-icon>
               Export
             </button>
@@ -49,7 +49,7 @@
 
   <div class="row no-gutters justify-content-center align-items-center">
     <div class="col-10">
-      <div class="my-4 px-2">
+      <div class="my-4 px-2" #table>
         <table mat-table matSort [dataSource]="dataSource" class="w-100">
           <ng-container matColumnDef="select">
             <th mat-header-cell *matHeaderCellDef>
@@ -70,9 +70,9 @@
             <td mat-cell *matCellDef="let element"> {{element.title}} </td>
           </ng-container>
 
-          <ng-container matColumnDef="userId">
+          <ng-container matColumnDef="user">
             <th mat-header-cell *matHeaderCellDef mat-sort-header> User</th>
-            <td mat-cell *matCellDef="let element"> {{users[element.userId]}} </td>
+            <td mat-cell *matCellDef="let element"> {{element.user}} </td>
           </ng-container>
 
           <ng-container matColumnDef="body">
